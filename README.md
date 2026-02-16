@@ -22,6 +22,19 @@ All uploaded files are stored in the `media/` directory at the project root, org
 
 Files are automatically renamed using UUID to prevent filename conflicts.
 
+### Amazon S3 (production media)
+
+When `AWS_STORAGE_BUCKET_NAME` is set, uploads go to that S3 bucket under the `media/` prefix instead of local `media/`. Set in `.env` or the environment:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `AWS_STORAGE_BUCKET_NAME` | Yes (to enable S3) | S3 bucket name |
+| `AWS_S3_REGION_NAME` | No | Region (default: `us-east-1`) |
+| `AWS_S3_CUSTOM_DOMAIN` | No | Custom domain for URLs (e.g. CloudFront) |
+| `AWS_DEFAULT_ACL` | No | Object ACL (default: `public-read`) |
+
+Credentials: set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, or use an IAM role when running on AWS. See [Amazon S3 User Guide](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html).
+
 ### Testing File Uploads
 
 To test file uploads:

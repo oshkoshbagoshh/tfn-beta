@@ -187,8 +187,17 @@ STATICFILES_DIRS = [
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files (Uploads)
-MEDIA_URL = '/media/'
+# Use Amazon S3 when AWS_STORAGE_BUCKET_NAME is set; otherwise local filesystem.
+# See: https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html
 MEDIA_ROOT = BASE_DIR / 'media'
+USE_S3 = bool(os.environ.get('AWS_STORAGE_BUCKET_NAME'))
+if USE_S3:
+    _s3_bucket = os.environ['AWS_STORAGE_BUCKET_NAME']
+    _s3_region = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+    _s3_domain = os.environ.get('AWS_S3_CUSTOM_DOMAIN') or f'{_s3_bucket}.s3.{_s3_region}.amazonaws.com'
+    MEDIA_URL = f'https://{_s3_domain}/media/'
+else:
+    MEDIA_URL = '/media/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -212,16 +221,35 @@ else:
     EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
     DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'noreply@tfnms.co')
 
+# Default storage: S3 for media when configured, else local.
+# Credentials: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (or IAM role when on AWS).
+if USE_S3:
+    _bucket = os.environ['AWS_STORAGE_BUCKET_NAME']
+    _region = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+    S3_DEFAULT_OPTIONS = {
+        'bucket_name': _bucket,
+        'region_name': _region,
+        'location': 'media',
+        'file_overwrite': False,
+        'default_acl': os.environ.get('AWS_DEFAULT_ACL', 'public-read'),
+        'object_parameters': {'CacheControl': 'max-age=86400'},
+        'custom_domain': os.environ.get('AWS_S3_CUSTOM_DOMAIN') or f'{_bucket}.s3.{_region}.amazonaws.com',
+        'querystring_auth': False,
+    }
+else:
+    S3_DEFAULT_OPTIONS = {}
+
 STORAGES = {
     'default': {
+        'BACKEND': 'storages.backends.s3.S3Storage',
+        'OPTIONS': S3_DEFAULT_OPTIONS,
+    } if USE_S3 else {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
         'LOCATION': BASE_DIR / 'media',
-
     },
     'staticfiles': {
         'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
         'LOCATION': BASE_DIR / 'static',
-    }
-
+    },
 }
 
