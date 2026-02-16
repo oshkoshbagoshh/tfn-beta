@@ -1,0 +1,6 @@
+# Issue template chooser (shown when opening a new issue)
+blank_issues_enabled: true
+contact_links:
+  - name: TFN CTV / music_beta docs
+    url: https://github.com/oshkoshbagoshh/tfn-beta/tree/main/docs
+    about: Project docs and notes
