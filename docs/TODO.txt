@@ -1,0 +1,111 @@
+- front end needs way better visual queues (toast message when things happen)
+
+- scroll to the top,
+
+- need type validation on song length (can enter in text instead of number)
+- the filtering and search system needs to be better  ( ie: when I click on an album or genre, it should filter.
+
+- there should be more a sort of "trending now"
+
+- there should be modals for when things happen (ie: try to play a song without being registered or logged in)
+- video upload size limit (to help us save space, please consider pasting in a video url like from youtube or something. We're a start up and server storage space is expensive :D
+
+- for uploading songs, it integrates with id3 package so we can collect the audio metadata on the backend
+
+- (make sure they sign a policies and agreement and stuff =
+
+- cookies (hey we take some of your data, etc)
+
+- dark mode
+
+- shuffle functionality
+
+- login/ logout (auth)
+
+- signup
+- password hashing
+- user authentication
+- user authorization
+- user sessions
+- flash message / toast
+- jQuery / AJAX
+- web scraping for data
+- email
+- templates
+- static
+    - images
+    - css
+    - javascript
+    - bootstrap5
+    - jQuery
+- have the moods from the form be from the actual dataset (DEAM, research, Kaggle, etc)
+
+
+================
+
+# TFNMS Main Site MVP Guidelines
+
+- Our team
+- each employee has a card, image, details (use start boostrap modern business)
+- Nathan's Linked Posts on CTV are scraped via PHP web scraper / browsershot / guzzle
+- all content for the pages and posts is entered
+- Admin Dashboard panel for managing blog posts , ( template created so can use same
+ - user is allowed to upload docx, markdown , RTF, and convert to blog post
+ - unit tests with PEST
+ - formatting / phpcs , etc.
+ - github action before pushing and merging into prod
+ - environment variables ,etc
+ - docker container created for development environment with PHP, Apache, MySQL, etc
+ - web development planning checklist (SEO, accessibility , etc )
+ - custom style and color schema / style guide, fonts, etc. are applied correctly in Tailwind
+
+ =======
+
+ ## TFNMS Music App MVP
+
+ - just another online store copy / laragigs for breakdown
+ - bear notes
+ - CTV categories, etc
+ - TFN Music Library / Samples version 1 created ( pull combines Itunes XML / audio scanner thing in typescript )
+ - Laravel PHPffmpeg
+ - get copyright free demo video files, songs, etc
+ - advertisers looking for copyright free songs can search by genre, tag, and if they aren't a member, they get a "Register to do XYZ"
+ - artists can upload their songs and see if there is a match via "mood, etc."
+ - id3 metadata is collected when songs uploaded
+
+
+#========================
+ TODO: May 19th, 10AM Sprint
+#=========================
+
+- handle image / media renaming
+- rewrite test, seed data / faker with new models
+- rewrite doc strings, comments, etc.
+- ERROR: when signing up, need to "agree to terms and services, but nothing pops up"
+- flashes / toasts explaining what's happening
+- improve the audio player so that it's near the footer, or floating
+- test out tag / filtering system
+- upload video tests
+- blog app , with latest posts
+- need to add admin view to legal
+- add legal urls / routes to the workflow when adding tracks, albums
+- genre hierarchies (electronic: house, etc )
+- artist portal app:
+    - bandzoogle html
+    - what data / pages we need
+    - wordpress musician theme example
+    - data we need:
+        - artist name, artist profile pic, shows/releases, contact (socials, email, etc ), featured song, playlist: "artist spotlight of top 5", copyright
+        - option to book / contact within our artist portal (use zoom / google meet / slack webhook url for now)
+        - user signup form / login & logout for artists (upload fields from model, etc. ) then create views and update REST API
+        - use fallback artist_picture.svg if they can't / don't upload profile pic
+
+- [ ] get rid of stuff you don't need
+- [ ] update / refactor models
+- [ ] djangocms
+- [ ] pull mood from DEAM dataset
+- [ ] Song (get key, BPM)
+- [ ] copyright will always be ours
+- [ ] don't need to upload video or manage campaign, they just need to browse through music portal and search via tags, moods, emotions, etc
+- [ ] TODO: librosa
+
