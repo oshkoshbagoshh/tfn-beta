@@ -221,6 +221,10 @@ else:
     EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
     DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER or 'noreply@tfnms.co')
 
+# Audius (Sandcastle) API – for artist/streaming integrations. Set in .env as AUDIUS_API_KEY.
+# See https://audius.org/ and Audius API docs. Do not commit the key.
+AUDIUS_API_KEY = os.environ.get('AUDIUS_API_KEY', '').strip() or None
+
 # Default storage: S3 for media when configured, else local.
 # Credentials: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (or IAM role when on AWS).
 if USE_S3:

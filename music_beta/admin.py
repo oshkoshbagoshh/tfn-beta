@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Genre, Artist, Album, Track, ServiceRequest, User, Copyright
+from .models import Genre, Artist, Album, Track, ServiceRequest, User, Copyright, SongOfTheWeek
 
 
 @admin.register(Genre)
@@ -60,5 +60,14 @@ class UserAdmin(admin.ModelAdmin):
 class CopyrightAdmin(admin.ModelAdmin):
     pass
     # TODO : add administrative views for copyright management
+
+
+@admin.register(SongOfTheWeek)
+class SongOfTheWeekAdmin(admin.ModelAdmin):
+    list_display = ('date', 'artist', 'song', 'posted')
+    list_filter = ('date',)
+    search_fields = ('artist', 'song')
+    date_hierarchy = 'date'
+    ordering = ('-date',)
 
 

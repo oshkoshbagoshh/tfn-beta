@@ -64,6 +64,25 @@ If you want to use the Pexels API for placeholder images:
 
    Then uncomment the dotenv loading code in `tfn_ctv/settings.py`
 
+### Friday TFN Song of the Week
+
+The **Song of the Week** tracker is stored in the database and can be loaded from CSV:
+
+- **Data file:** `data/friday_tfn_song_of_the_week.csv` (columns: date, artist, song, youtube_url, spotify_artist_url, apple_music_artist_url, instagram_artist_url, about_artist, description).
+- **Load/update:** `python manage.py load_song_of_the_week` (use `--clear` to replace all entries).
+- **Public page:** `/music/song-of-the-week/` (only entries with both artist and song are shown).
+- **Admin:** Django admin → Music beta → Songs of the Week.
+
+### Audius (Sandcastle) API
+
+For Audius streaming integrations (e.g. artist profiles, discovery):
+
+1. Add your Audius Sandcastle API key to `.env` (do not commit it):
+   ```
+   AUDIUS_API_KEY=your_audius_sandcastle_api_key
+   ```
+2. The project reads it via `settings.AUDIUS_API_KEY`. See `.env.example` for a template.
+
 ### Dependencies
 
 - Django 5.2.1
