@@ -364,3 +364,33 @@ class Cart(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s Cart"
+
+
+class SongOfTheWeek(models.Model):
+    """
+    Friday TFN Song of the Week – tracker entry.
+    Rows with blank artist/song represent "Did not post" for that date.
+    """
+    date = models.DateField(help_text="Friday date for this Song of the Week")
+    artist = models.CharField(max_length=200, blank=True)
+    song = models.CharField(max_length=300, blank=True)
+    youtube_url = models.URLField(blank=True, help_text="Song / video link")
+    spotify_artist_url = models.URLField(blank=True)
+    apple_music_artist_url = models.URLField(blank=True)
+    instagram_artist_url = models.URLField(blank=True)
+    about_artist = models.TextField(blank=True)
+    description = models.TextField(blank=True, help_text="Track description if available")
+
+    class Meta:
+        ordering = ['-date']
+        verbose_name = "Song of the Week"
+        verbose_name_plural = "Songs of the Week"
+
+    def __str__(self):
+        if self.artist and self.song:
+            return f"{self.date}: {self.artist} – {self.song}"
+        return f"{self.date}: (no post)"
+
+    @property
+    def posted(self):
+        return bool(self.artist and self.song)

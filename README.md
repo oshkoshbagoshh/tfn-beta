@@ -22,6 +22,19 @@ All uploaded files are stored in the `media/` directory at the project root, org
 
 Files are automatically renamed using UUID to prevent filename conflicts.
 
+### Amazon S3 (production media)
+
+When `AWS_STORAGE_BUCKET_NAME` is set, uploads go to that S3 bucket under the `media/` prefix instead of local `media/`. Set in `.env` or the environment:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `AWS_STORAGE_BUCKET_NAME` | Yes (to enable S3) | S3 bucket name |
+| `AWS_S3_REGION_NAME` | No | Region (default: `us-east-1`) |
+| `AWS_S3_CUSTOM_DOMAIN` | No | Custom domain for URLs (e.g. CloudFront) |
+| `AWS_DEFAULT_ACL` | No | Object ACL (default: `public-read`) |
+
+Credentials: set `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, or use an IAM role when running on AWS. See [Amazon S3 User Guide](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html).
+
 ### Testing File Uploads
 
 To test file uploads:
@@ -50,6 +63,25 @@ If you want to use the Pexels API for placeholder images:
    ```
 
    Then uncomment the dotenv loading code in `tfn_ctv/settings.py`
+
+### Friday TFN Song of the Week
+
+The **Song of the Week** tracker is stored in the database and can be loaded from CSV:
+
+- **Data file:** `data/friday_tfn_song_of_the_week.csv` (columns: date, artist, song, youtube_url, spotify_artist_url, apple_music_artist_url, instagram_artist_url, about_artist, description).
+- **Load/update:** `python manage.py load_song_of_the_week` (use `--clear` to replace all entries).
+- **Public page:** `/music/song-of-the-week/` (only entries with both artist and song are shown).
+- **Admin:** Django admin → Music beta → Songs of the Week.
+
+### Audius (Sandcastle) API
+
+For Audius streaming integrations (e.g. artist profiles, discovery):
+
+1. Add your Audius Sandcastle API key to `.env` (do not commit it):
+   ```
+   AUDIUS_API_KEY=your_audius_sandcastle_api_key
+   ```
+2. The project reads it via `settings.AUDIUS_API_KEY`. See `.env.example` for a template.
 
 ### Dependencies
 

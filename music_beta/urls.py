@@ -29,6 +29,7 @@ urlpatterns = [
     path('search/', views.search, name='search'),
     path('pexels-images/', views.get_pexels_images, name='pexels_images'),
     path('service-request/', views.service_request, name='service_request'),
+    path('song-of-the-week/', views.song_of_the_week_list, name='song_of_the_week'),
     path('update-play-count/<int:track_id>/', views.update_play_count, name='update_play_count'),
     path('legal/generate_copyright_pdf/', views.generate_copyright_pdf, name='generate_copyright_pdf'),
     path('legal/download_copyright_boilerplate/', views.download_copyright_boilerplate, name='download_copyright_boilerplate'),

@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Friday TFN Song of the Week – TFN Media{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@700&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* TFN Style Guide: Song of the Week page */
+#song-of-the-week-page {
+    font-family: 'Open Sans', sans-serif;
+    color: #100B00;
+}
+#song-of-the-week-page h1, #song-of-the-week-page h2, #song-of-the-week-page .card-title {
+    font-family: 'Rubik', sans-serif;
+    font-weight: 700;
+    color: #440381;
+}
+#song-of-the-week-page a {
+    color: #440381;
+    text-decoration: none;
+}
+#song-of-the-week-page a:hover {
+    text-decoration: underline;
+}
+#song-of-the-week-page .sotw-header {
+    background-color: #440381;
+    color: white;
+}
+#song-of-the-week-page .btn-primary, #song-of-the-week-page .badge.bg-primary {
+    background-color: #0056BF;
+    border-color: #0056BF;
+}
+#song-of-the-week-page .caption, #song-of-the-week-page .text-muted {
+    color: #8338EC;
+}
+#song-of-the-week-page .card {
+    border-color: rgba(68, 3, 129, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+<div id="song-of-the-week-page" class="container py-5">
+    <header class="sotw-header rounded-3 p-4 mb-4">
+        <h1 class="mb-1">Friday TFN Song of the Week</h1>
+        <p class="lead mb-0 opacity-90">Independent artists we’re highlighting each week</p>
+    </header>
+
+    {% if entries %}
+        <div class="row g-4">
+            {% for entry in entries %}
+            <div class="col-12 col-lg-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h2 class="card-title h5 mb-0">{{ entry.artist }} – {{ entry.song }}</h2>
+                            <span class="badge bg-primary">{{ entry.date|date:"M j, Y" }}</span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            {% if entry.youtube_url %}
+                            <a href="{{ entry.youtube_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-danger">YouTube</a>
+                            {% endif %}
+                            {% if entry.spotify_artist_url %}
+                            <a href="{{ entry.spotify_artist_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success">Spotify</a>
+                            {% endif %}
+                            {% if entry.apple_music_artist_url %}
+                            <a href="{{ entry.apple_music_artist_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">Apple Music</a>
+                            {% endif %}
+                            {% if entry.instagram_artist_url %}
+                            <a href="{{ entry.instagram_artist_url }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-warning">Instagram</a>
+                            {% endif %}
+                        </div>
+                        {% if entry.about_artist %}
+                        <p class="caption small mb-1">About the artist</p>
+                        <p class="card-text small">{{ entry.about_artist }}</p>
+                        {% endif %}
+                        {% if entry.description %}
+                        <p class="caption small mb-1">Description</p>
+                        <p class="card-text small">{{ entry.description }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-muted">No Song of the Week entries yet. Check back soon.</p>
+        <p class="small">Staff can load entries from <code>data/friday_tfn_song_of_the_week.csv</code> using <code>python manage.py load_song_of_the_week</code>.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,777 @@
+# Audio Media Manager WP Plugin
+Got it! You want to create a WordPress plugin that:
+
+1. Uses WordPress as the primary platform
+2. Leverages the WordPress REST API
+3. Creates custom blocks and patterns for the block editor (Gutenberg)
+4. Can be used as a headless CMS with React
+
+Let me create a comprehensive WordPress plugin for your audio/media management platform that meets these requirements.
+
+# Audio Media Manager WordPress Plugin
+
+## Plugin Structure
+
+```
+audio-media-manager/
+├── audio-media-manager.php              # Main plugin file
+├── includes/
+│   ├── class-post-types.php             # Custom post types for tracks, playlists, etc.
+│   ├── class-taxonomies.php             # Custom taxonomies (genres, tags, etc.)
+│   ├── class-meta-boxes.php             # Custom meta fields
+│   ├── class-rest-api.php               # Extended REST API endpoints
+│   ├── class-block-editor.php           # Block editor integration
+│   ├── class-media-processor.php        # Audio file processing
+│   └── class-admin.php                  # Admin settings
+├── blocks/                              # Custom Gutenberg blocks
+│   ├── audio-player/
+│   ├── playlist/
+│   ├── track-grid/
+│   ├── artist-profile/
+│   └── waveform-display/
+├── templates/                           # Template files
+│   ├── single-track.php
+│   ├── archive-track.php
+│   ├── single-playlist.php
+│   └── artist-profile.php
+├── assets/
+│   ├── css/
+│   ├── js/
+│   └── images/
+└── languages/                           # Internationalization
+```
+
+## Main Plugin File (audio-media-manager.php)
+
+```php
+<?php
+/**
+ * Plugin Name: Audio Media Manager
+ * Plugin URI: https://yourwebsite.com/audio-media-manager
+ * Description: A comprehensive audio media management system for producers, DJs, and artists
+ * Version: 1.0.0
+ * Author: AJ Javadi
+ * Author URI: https://yourwebsite.com
+ * Text Domain: audio-media-manager
+ * Domain Path: /languages
+ * License: GPL v2 or later
+ */
+
+// Exit if accessed directly
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+// Define plugin constants
+define('AMM_VERSION', '1.0.0');
+define('AMM_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('AMM_PLUGIN_URL', plugin_dir_url(__FILE__));
+define('AMM_PLUGIN_BASENAME', plugin_basename(__FILE__));
+
+// Include required files
+require_once AMM_PLUGIN_DIR . 'includes/class-post-types.php';
+require_once AMM_PLUGIN_DIR . 'includes/class-taxonomies.php';
+require_once AMM_PLUGIN_DIR . 'includes/class-meta-boxes.php';
+require_once AMM_PLUGIN_DIR . 'includes/class-rest-api.php';
+require_once AMM_PLUGIN_DIR . 'includes/class-block-editor.php';
+require_once AMM_PLUGIN_DIR . 'includes/class-media-processor.php';
+require_once AMM_PLUGIN_DIR . 'includes/class-admin.php';
+
+/**
+ * Main plugin class
+ */
+class Audio_Media_Manager {
+    /**
+     * Instance of this class
+     */
+    private static $instance = null;
+    
+    /**
+     * Plugin components
+     */
+    public $post_types;
+    public $taxonomies;
+    public $meta_boxes;
+    public $rest_api;
+    public $block_editor;
+    public $media_processor;
+    public $admin;
+    
+    /**
+     * Get the singleton instance
+     */
+    public static function get_instance() {
+        if (null === self::$instance) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+    
+    /**
+     * Constructor
+     */
+    private function __construct() {
+        // Initialize plugin components
+        $this->post_types = new AMM_Post_Types();
+        $this->taxonomies = new AMM_Taxonomies();
+        $this->meta_boxes = new AMM_Meta_Boxes();
+        $this->rest_api = new AMM_REST_API();
+        $this->block_editor = new AMM_Block_Editor();
+        $this->media_processor = new AMM_Media_Processor();
+        $this->admin = new AMM_Admin();
+        
+        // Register activation/deactivation hooks
+        register_activation_hook(__FILE__, array($this, 'activate'));
+        register_deactivation_hook(__FILE__, array($this, 'deactivate'));
+        
+        // Initialize the plugin
+        add_action('plugins_loaded', array($this, 'init'));
+    }
+    
+    /**
+     * Plugin activation
+     */
+    public function activate() {
+        // Create custom post types and taxonomies
+        $this->post_types->register_post_types();
+        $this->taxonomies->register_taxonomies();
+        
+        // Flush rewrite rules
+        flush_rewrite_rules();
+        
+        // Create default options
+        add_option('amm_version', AMM_VERSION);
+        add_option('amm_player_theme', 'default');
+        add_option('amm_enable_comments', 'yes');
+        add_option('amm_enable_downloads', 'yes');
+        add_option('amm_enable_waveforms', 'yes');
+    }
+    
+    /**
+     * Plugin deactivation
+     */
+    public function deactivate() {
+        // Flush rewrite rules
+        flush_rewrite_rules();
+    }
+    
+    /**
+     * Initialize the plugin
+     */
+    public function init() {
+        // Load text domain for internationalization
+        load_plugin_textdomain('audio-media-manager', false, dirname(AMM_PLUGIN_BASENAME) . '/languages');
+        
+        // Enqueue scripts and styles
+        add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
+        
+        // Register REST API endpoints
+        add_action('rest_api_init', array($this->rest_api, 'register_endpoints'));
+        
+        // Register Gutenberg blocks
+        add_action('init', array($this->block_editor, 'register_blocks'));
+        
+        // Add custom template for single track and playlist
+        add_filter('single_template', array($this, 'load_single_template'));
+        add_filter('archive_template', array($this, 'load_archive_template'));
+    }
+    
+    /**
+     * Enqueue frontend scripts and styles
+     */
+    public function enqueue_frontend_assets() {
+        // Main CSS
+        wp_enqueue_style(
+            'amm-styles',
+            AMM_PLUGIN_URL . 'assets/css/frontend.css',
+            array(),
+            AMM_VERSION
+        );
+        
+        // Main JavaScript
+        wp_enqueue_script(
+            'amm-scripts',
+            AMM_PLUGIN_URL . 'assets/js/frontend.js',
+            array('jquery', 'wp-api'),
+            AMM_VERSION,
+            true
+        );
+        
+        // WaveSurfer.js for waveform visualization
+        wp_enqueue_script(
+            'wavesurfer',
+            AMM_PLUGIN_URL . 'assets/js/wavesurfer.min.js',
+            array(),
+            '6.6.3',
+            true
+        );
+        
+        // Localize script with data
+        wp_localize_script('amm-scripts', 'ammData', array(
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'restUrl' => rest_url('amm/v1'),
+            'nonce' => wp_create_nonce('wp_rest'),
+            'playerTheme' => get_option('amm_player_theme', 'default'),
+            'enableWaveforms' => get_option('amm_enable_waveforms', 'yes'),
+            'isLoggedIn' => is_user_logged_in(),
+            'currentUserId' => get_current_user_id(),
+        ));
+    }
+    
+    /**
+     * Enqueue admin scripts and styles
+     */
+    public function enqueue_admin_assets($hook) {
+        // Admin CSS
+        wp_enqueue_style(
+            'amm-admin-styles',
+            AMM_PLUGIN_URL . 'assets/css/admin.css',
+            array(),
+            AMM_VERSION
+        );
+        
+        // Admin JavaScript
+        wp_enqueue_script(
+            'amm-admin-scripts',
+            AMM_PLUGIN_URL . 'assets/js/admin.js',
+            array('jquery', 'wp-api', 'wp-element', 'wp-components'),
+            AMM_VERSION,
+            true
+        );
+        
+        // Media uploader
+        wp_enqueue_media();
+        
+        // Only on our custom post types
+        $screen = get_current_screen();
+        if (in_array($screen->id, array('track', 'playlist', 'artist'))) {
+            wp_enqueue_script(
+                'amm-post-editor',
+                AMM_PLUGIN_URL . 'assets/js/post-editor.js',
+                array('jquery', 'wp-api', 'wp-element', 'wp-components', 'wavesurfer'),
+                AMM_VERSION,
+                true
+            );
+        }
+    }
+    
+    /**
+     * Load custom template for single track and playlist
+     */
+    public function load_single_template($template) {
+        global $post;
+        
+        if ($post->post_type === 'track') {
+            $custom_template = AMM_PLUGIN_DIR . 'templates/single-track.php';
+            if (file_exists($custom_template)) {
+                return $custom_template;
+            }
+        }
+        
+        if ($post->post_type === 'playlist') {
+            $custom_template = AMM_PLUGIN_DIR . 'templates/single-playlist.php';
+            if (file_exists($custom_template)) {
+                return $custom_template;
+            }
+        }
+        
+        return $template;
+    }
+    
+    /**
+     * Load custom template for archives
+     */
+    public function load_archive_template($template) {
+        if (is_post_type_archive('track')) {
+            $custom_template = AMM_PLUGIN_DIR . 'templates/archive-track.php';
+            if (file_exists($custom_template)) {
+                return $custom_template;
+            }
+        }
+        
+        if (is_post_type_archive('playlist')) {
+            $custom_template = AMM_PLUGIN_DIR . 'templates/archive-playlist.php';
+            if (file_exists($custom_template)) {
+                return $custom_template;
+            }
+        }
+        
+        return $template;
+    }
+}
+
+// Initialize the plugin
+function amm() {
+    return Audio_Media_Manager::get_instance();
+}
+amm();
+```
+
+## Custom Post Types (class-post-types.php)
+
+```php
+<?php
+/**
+ * Register custom post types for the plugin
+ */
+class AMM_Post_Types {
+    /**
+     * Register custom post types
+     */
+    public function register_post_types() {
+        // Track post type
+        register_post_type('track', array(
+            'labels' => array(
+                'name' => __('Tracks', 'audio-media-manager'),
+                'singular_name' => __('Track', 'audio-media-manager'),
+                'add_new' => __('Add New', 'audio-media-manager'),
+                'add_new_item' => __('Add New Track', 'audio-media-manager'),
+                'edit_item' => __('Edit Track', 'audio-media-manager'),
+                'new_item' => __('New Track', 'audio-media-manager'),
+                'view_item' => __('View Track', 'audio-media-manager'),
+                'search_items' => __('Search Tracks', 'audio-media-manager'),
+                'not_found' => __('No tracks found', 'audio-media-manager'),
+                'not_found_in_trash' => __('No tracks found in Trash', 'audio-media-manager'),
+            ),
+            'public' => true,
+            'has_archive' => true,
+            'menu_icon' => 'dashicons-format-audio',
+            'menu_position' => 5,
+            'supports' => array('title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'custom-fields'),
+            'rewrite' => array('slug' => 'tracks'),
+            'show_in_rest' => true,
+            'rest_base' => 'tracks',
+            'capability_type' => 'post',
+            'map_meta_cap' => true,
+        ));
+        
+        // Playlist post type
+        register_post_type('playlist', array(
+            'labels' => array(
+                'name' => __('Playlists', 'audio-media-manager'),
+                'singular_name' => __('Playlist', 'audio-media-manager'),
+                'add_new' => __('Add New', 'audio-media-manager'),
+                'add_new_item' => __('Add New Playlist', 'audio-media-manager'),
+                'edit_item' => __('Edit Playlist', 'audio-media-manager'),
+                'new_item' => __('New Playlist', 'audio-media-manager'),
+                'view_item' => __('View Playlist', 'audio-media-manager'),
+                'search_items' => __('Search Playlists', 'audio-media-manager'),
+                'not_found' => __('No playlists found', 'audio-media-manager'),
+                'not_found_in_trash' => __('No playlists found in Trash', 'audio-media-manager'),
+            ),
+            'public' => true,
+            'has_archive' => true,
+            'menu_icon' => 'dashicons-playlist-audio',
+            'menu_position' => 6,
+            'supports' => array('title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'custom-fields'),
+            'rewrite' => array('slug' => 'playlists'),
+            'show_in_rest' => true,
+            'rest_base' => 'playlists',
+            'capability_type' => 'post',
+            'map_meta_cap' => true,
+        ));
+        
+        // Artist profile post type
+        register_post_type('artist', array(
+            'labels' => array(
+                'name' => __('Artists', 'audio-media-manager'),
+                'singular_name' => __('Artist', 'audio-media-manager'),
+                'add_new' => __('Add New', 'audio-media-manager'),
+                'add_new_item' => __('Add New Artist', 'audio-media-manager'),
+                'edit_item' => __('Edit Artist', 'audio-media-manager'),
+                'new_item' => __('New Artist', 'audio-media-manager'),
+                'view_item' => __('View Artist', 'audio-media-manager'),
+                'search_items' => __('Search Artists', 'audio-media-manager'),
+                'not_found' => __('No artists found', 'audio-media-manager'),
+                'not_found_in_trash' => __('No artists found in Trash', 'audio-media-manager'),
+            ),
+            'public' => true,
+            'has_archive' => true,
+            'menu_icon' => 'dashicons-admin-users',
+            'menu_position' => 7,
+            'supports' => array('title', 'editor', 'author', 'thumbnail', 'excerpt', 'custom-fields'),
+            'rewrite' => array('slug' => 'artists'),
+            'show_in_rest' => true,
+            'rest_base' => 'artists',
+            'capability_type' => 'post',
+            'map_meta_cap' => true,
+        ));
+    }
+}
+```
+
+## Custom Taxonomies (class-taxonomies.php)
+
+```php
+<?php
+/**
+ * Register custom taxonomies for the plugin
+ */
+class AMM_Taxonomies {
+    /**
+     * Register custom taxonomies
+     */
+    public function register_taxonomies() {
+        // Genre taxonomy
+        register_taxonomy('genre', array('track', 'playlist'), array(
+            'labels' => array(
+                'name' => __('Genres', 'audio-media-manager'),
+                'singular_name' => __('Genre', 'audio-media-manager'),
+                'search_items' => __('Search Genres', 'audio-media-manager'),
+                'all_items' => __('All Genres', 'audio-media-manager'),
+                'parent_item' => __('Parent Genre', 'audio-media-manager'),
+                'parent_item_colon' => __('Parent Genre:', 'audio-media-manager'),
+                'edit_item' => __('Edit Genre', 'audio-media-manager'),
+                'update_item' => __('Update Genre', 'audio-media-manager'),
+                'add_new_item' => __('Add New Genre', 'audio-media-manager'),
+                'new_item_name' => __('New Genre Name', 'audio-media-manager'),
+                'menu_name' => __('Genres', 'audio-media-manager'),
+            ),
+            'hierarchical' => true,
+            'show_ui' => true,
+            'show_admin_column' => true,
+            'query_var' => true,
+            'rewrite' => array('slug' => 'genre'),
+            'show_in_rest' => true,
+            'rest_base' => 'genres',
+        ));
+        
+        // Mood taxonomy
+        register_taxonomy('mood', array('track', 'playlist'), array(
+            'labels' => array(
+                'name' => __('Moods', 'audio-media-manager'),
+                'singular_name' => __('Mood', 'audio-media-manager'),
+                'search_items' => __('Search Moods', 'audio-media-manager'),
+                'all_items' => __('All Moods', 'audio-media-manager'),
+                'edit_item' => __('Edit Mood', 'audio-media-manager'),
+                'update_item' => __('Update Mood', 'audio-media-manager'),
+                'add_new_item' => __('Add New Mood', 'audio-media-manager'),
+                'new_item_name' => __('New Mood Name', 'audio-media-manager'),
+                'menu_name' => __('Moods', 'audio-media-manager'),
+            ),
+            'hierarchical' => false,
+            'show_ui' => true,
+            'show_admin_column' => true,
+            'query_var' => true,
+            'rewrite' => array('slug' => 'mood'),
+            'show_in_rest' => true,
+            'rest_base' => 'moods',
+        ));
+        
+        // Key taxonomy (musical key)
+        register_taxonomy('key', array('track'), array(
+            'labels' => array(
+                'name' => __('Keys', 'audio-media-manager'),
+                'singular_name' => __('Key', 'audio-media-manager'),
+                'search_items' => __('Search Keys', 'audio-media-manager'),
+                'all_items' => __('All Keys', 'audio-media-manager'),
+                'edit_item' => __('Edit Key', 'audio-media-manager'),
+                'update_item' => __('Update Key', 'audio-media-manager'),
+                'add_new_item' => __('Add New Key', 'audio-media-manager'),
+                'new_item_name' => __('New Key Name', 'audio-media-manager'),
+                'menu_name' => __('Keys', 'audio-media-manager'),
+            ),
+            'hierarchical' => false,
+            'show_ui' => true,
+            'show_admin_column' => true,
+            'query_var' => true,
+            'rewrite' => array('slug' => 'key'),
+            'show_in_rest' => true,
+            'rest_base' => 'keys',
+        ));
+    }
+}
+```
+
+## REST API Extensions (class-rest-api.php)
+
+```php
+<?php
+/**
+ * Extend the WordPress REST API for the plugin
+ */
+class AMM_REST_API {
+    /**
+     * Register REST API endpoints
+     */
+    public function register_endpoints() {
+        // Register custom fields for post types
+        $this->register_post_meta();
+        
+        // Register custom endpoints
+        register_rest_route('amm/v1', '/tracks/(?P<id>\d+)/waveform', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_track_waveform'),
+            'permission_callback' => '__return_true',
+            'args' => array(
+                'id' => array(
+                    'validate_callback' => function($param) {
+                        return is_numeric($param);
+                    }
+                ),
+            ),
+        ));
+        
+        register_rest_route('amm/v1', '/tracks/(?P<id>\d+)/audio', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_track_audio'),
+            'permission_callback' => '__return_true',
+            'args' => array(
+                'id' => array(
+                    'validate_callback' => function($param) {
+                        return is_numeric($param);
+                    }
+                ),
+            ),
+        ));
+        
+        register_rest_route('amm/v1', '/playlists/(?P<id>\d+)/tracks', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_playlist_tracks'),
+            'permission_callback' => '__return_true',
+            'args' => array(
+                'id' => array(
+                    'validate_callback' => function($param) {
+                        return is_numeric($param);
+                    }
+                ),
+            ),
+        ));
+        
+        register_rest_route('amm/v1', '/artists/(?P<id>\d+)/tracks', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_artist_tracks'),
+            'permission_callback' => '__return_true',
+            'args' => array(
+                'id' => array(
+                    'validate_callback' => function($param) {
+                        return is_numeric($param);
+                    }
+                ),
+            ),
+        ));
+        
+        // Analytics endpoint (protected)
+        register_rest_route('amm/v1', '/analytics', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'get_analytics'),
+            'permission_callback' => function() {
+                return current_user_can('edit_posts');
+            },
+        ));
+    }
+    
+    /**
+     * Register post meta fields for REST API
+     */
+    public function register_post_meta() {
+        // Track meta fields
+        register_post_meta('track', 'amm_audio_file', array(
+            'show_in_rest' => true,
+            'single' => true,
+            'type' => 'string',
+        ));
+        
+        register_post_meta('track', 'amm_duration', array(
+            'show_in_rest' => true,
+            'single' => true,
+            'type' => 'number',
+        ));
+        
+        register_post_meta('track', 'amm_bpm', array(
+            'show_in_rest' => true,
+            'single' => true,
+            'type' => 'number',
+        ));
+        
+        register_post_meta('track', 'amm_waveform_data', array(
+            'show_in_rest' => true,
+            'single' => true,
+            'type' => 'string',
+        ));
+        
+        register_post_meta('track', 'amm_play_count', array(
+            'show_in_rest' => true,
+            'single' => true,
+            'type' => 'number',
+            'default' => 0,
+        ));
+        
+        // Playlist meta fields
+        register_post_meta('playlist', 'amm_tracks', array(
+            'show_in_rest' => array(
+                'schema' => array(
+                    'type' => 'array',
+                    'items' => array(
+                        'type' => 'number',
+                    ),
+                ),
+            ),
+            'single' => true,
+            'type' => 'array',
+        ));
+        
+        register_post_meta('playlist', 'amm_is_public', array(
+            'show_in_rest' => true,
+            'single' => true,
+            'type' => 'boolean',
+            'default' => true,
+        ));
+        
+        // Artist meta fields
+        register_post_meta('artist', 'amm_social_links', array(
+            'show_in_rest' => array(
+                'schema' => array(
+                    'type' => 'object',
+                    'properties' => array(
+                        'website' => array(
+                            'type' => 'string',
+                        ),
+                        'facebook' => array(
+                            'type' => 'string',
+                        ),
+                        'twitter' => array(
+                            'type' => 'string',
+                        ),
+                        'instagram' => array(
+                            'type' => 'string',
+                        ),
+                        'soundcloud' => array(
+                            'type' => 'string',
+                        ),
+                        'spotify' => array(
+                            'type' => 'string',
+                        ),
+                    ),
+                ),
+            ),
+            'single' => true,
+            'type' => 'object',
+        ));
+    }
+    
+    /**
+     * Get track waveform data
+     */
+    public function get_track_waveform($request) {
+        $track_id = $request['id'];
+        $track = get_post($track_id);
+        
+        if (!$track || $track->post_type !== 'track') {
+            return new WP_Error('track_not_found', __('Track not found', 'audio-media-manager'), array('status' => 404));
+        }
+        
+        $waveform_data = get_post_meta($track_id, 'amm_waveform_data', true);
+        
+        if (empty($waveform_data)) {
+            // Generate waveform data if not available
+            $audio_file = get_post_meta($track_id, 'amm_audio_file', true);
+            if (empty($audio_file)) {
+                return new WP_Error('audio_file_not_found', __('Audio file not found', 'audio-media-manager'), array('status' => 404));
+            }
+            
+            $waveform_data = amm()->media_processor->generate_waveform_data($audio_file);
+            if (is_wp_error($waveform_data)) {
+                return $waveform_data;
+            }
+            
+            update_post_meta($track_id, 'amm_waveform_data', $waveform_data);
+        }
+        
+        return array(
+            'id' => $track_id,
+            'waveform_data' => $waveform_data,
+        );
+    }
+    
+    /**
+     * Get track audio file
+     */
+    public function get_track_audio($request) {
+        $track_id = $request['id'];
+        $track = get_post($track_id);
+        
+        if (!$track || $track->post_type !== 'track') {
+            return new WP_Error('track_not_found', __('Track not found', 'audio-media-manager'), array('status' => 404));
+        }
+        
+        $audio_file = get_post_meta($track_id, 'amm_audio_file', true);
+        
+        if (empty($audio_file)) {
+            return new WP_Error('audio_file_not_found', __('Audio file not found', 'audio-media-manager'), array('status' => 404));
+        }
+        
+        // Increment play count
+        $play_count = (int) get_post_meta($track_id, 'amm_play_count', true);
+        update_post_meta($track_id, 'amm_play_count', $play_count + 1);
+        
+        $file_url = wp_get_attachment_url($audio_file);
+        
+        return array(
+            'id' => $track_id,
+            'url' => $file_url,
+            'title' => $track->post_title,
+            'duration' => get_post_meta($track_id, 'amm_duration', true),
+        );
+    }
+    
+    /**
+     * Get playlist tracks
+     */
+    public function get_playlist_tracks($request) {
+        $playlist_id = $request['id'];
+        $playlist = get_post($playlist_id);
+        
+        if (!$playlist || $playlist->post_type !== 'playlist') {
+            return new WP_Error('playlist_not_found', __('Playlist not found', 'audio-media-manager'), array('status' => 404));
+        }
+        
+        $is_public = get_post_meta($playlist_id, 'amm_is_public', true);
+        
+        // Check if playlist is private and user has permission
+        if (!$is_public && !current_user_can('edit_post', $playlist_id)) {
+            return new WP_Error('permission_denied', __('You do not have permission to view this playlist', 'audio-media-manager'), array('status' => 403));
+        }
+        
+        $track_ids = get_post_meta($playlist_id, 'amm_tracks', true);
+        
+        if (empty($track_ids) || !is_array($track_ids)) {
+            return array(
+                'id' => $playlist_id,
+                'title' => $playlist->post_title,
+                'tracks' => array(),
+            );
+        }
+        
+        $tracks = array();
+        
+        foreach ($track_ids as $track_id) {
+            $track = get_post($track_id);
+            
+            if ($track && $track->post_type === 'track' && $track->post_status === 'publish') {
+                $audio_file = get_post_meta($track_id, 'amm_audio_file', true);
+                $file_url = wp_get_attachment_url($audio_file);
+                
+                $tracks[] = array(
+                    'id' => $track_id,
+                    'title' => $track->post_title,
+                    'url' => $file_url,
+                    'duration' => get_post_meta($track_id, 'amm_duration', true),
+                    'thumbnail' => get_the_post_thumbnail_url($track_id, 'thumbnail'),
+                    'permalink' => get_permalink($track_id),
+                );
+            }
+        }
+        
+        return array(
+            'id' => $playlist_id,
+            'title' => $playlist->post_title,
+            'tracks' => $tracks,
+        );
+    }
+    
+    /**
+     * Get artist tracks
+     */
+```

@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from music_beta.models import User, Track
 import uuid
 import os
@@ -33,6 +34,7 @@ class ArtistProfile(models.Model):
         twitter (URLField): Artist's Twitter profile URL.
         instagram (URLField): Artist's Instagram profile URL.
         spotify (URLField): Artist's Spotify profile URL.
+        apple_music (URLField): Artist's Apple Music profile URL.
         soundcloud (URLField): Artist's SoundCloud profile URL.
         youtube (URLField): Artist's YouTube channel URL.
         featured_track (ForeignKey): A track featured on the artist's profile.
@@ -49,6 +51,7 @@ class ArtistProfile(models.Model):
     twitter = models.URLField(blank=True)
     instagram = models.URLField(blank=True)
     spotify = models.URLField(blank=True)
+    apple_music = models.URLField(blank=True)
     soundcloud = models.URLField(blank=True)
     youtube = models.URLField(blank=True)
 
@@ -77,3 +80,57 @@ class ArtistProfile(models.Model):
                 pass
         # Fallback placeholder URL with random image keyed by user id
         return f'https://picsum.photos/300?random={self.user.id}'
+
+
+class ArtistStreamingData(models.Model):
+    """
+    Cached Spotify and Apple Music data for an artist profile.
+    Fetched when artist saves profile with Spotify/Apple Music URLs or via "Refresh" button.
+    """
+    profile = models.OneToOneField(
+        ArtistProfile, on_delete=models.CASCADE, related_name='streaming_data'
+    )
+    # Spotify: stored as JSON from API (followers, popularity, genres, image_url, etc.)
+    spotify_data = models.JSONField(blank=True, null=True)
+    spotify_updated_at = models.DateTimeField(blank=True, null=True)
+    # Apple Music: stored as JSON (artist_id, name, link, etc.)
+    apple_music_data = models.JSONField(blank=True, null=True)
+    apple_music_updated_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Streaming data for {self.profile.user.username}"
+
+    @property
+    def spotify_followers(self):
+        """Convenience: follower count from cached Spotify data."""
+        if self.spotify_data and isinstance(self.spotify_data.get('followers'), dict):
+            return self.spotify_data['followers'].get('total')
+        return None
+
+    @property
+    def spotify_popularity(self):
+        """Convenience: 0-100 popularity from cached Spotify data."""
+        if self.spotify_data is not None:
+            return self.spotify_data.get('popularity')
+        return None
+
+    @property
+    def spotify_genres(self):
+        """Convenience: list of genre strings from cached Spotify data."""
+        if self.spotify_data and isinstance(self.spotify_data.get('genres'), list):
+            return self.spotify_data['genres']
+        return []
+
+    @property
+    def spotify_image_url(self):
+        """First image URL from cached Spotify data."""
+        if self.spotify_data and self.spotify_data.get('images'):
+            return self.spotify_data['images'][0].get('url')
+        return None
+
+    @property
+    def apple_music_url(self):
+        """Apple Music artist link from cached data."""
+        if self.apple_music_data:
+            return self.apple_music_data.get('artistLinkUrl') or self.apple_music_data.get('url')
+        return None

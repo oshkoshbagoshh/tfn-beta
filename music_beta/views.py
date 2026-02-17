@@ -32,7 +32,7 @@ except ImportError:
 
     requests = MockRequests()
 
-from .models import Genre, Artist, Album, Track, User, AdCampaign, ServiceRequest, ClientCampaign, Cart
+from .models import Genre, Artist, Album, Track, User, AdCampaign, ServiceRequest, ClientCampaign, Cart, SongOfTheWeek
 from .forms import (
     CopyrightForm, LoginForm, UserSignupForm, AdCampaignForm,
     ServiceRequestForm, ClientCampaignForm,
@@ -299,6 +299,18 @@ def service_request(request):
         form = ServiceRequestForm()
 
     return render(request, 'music_beta/service_request.html', {'form': form})
+
+
+def song_of_the_week_list(request):
+    """
+    Friday TFN Song of the Week – list of posted entries (newest first).
+    """
+    entries = SongOfTheWeek.objects.all()
+    # Only show rows that have both artist and song (i.e. "posted")
+    posted = [e for e in entries if e.posted]
+    context = {"entries": posted}
+    return render(request, "music_beta/song_of_the_week.html", context)
+
 
 def music_platform(request):
     """
